@@ -1,0 +1,70 @@
+type UserName__1 = text;
+type UserName = text;
+type StreamingStrategy = variant {
+                           Callback:
+                            record {
+                              callback: func () -> ();
+                              token: StreamingCallbackToken;
+                            };};
+type StreamingCallbackToken = 
+ record {
+   contentEncoding: text;
+   index: nat;
+   key: text;
+ };
+type StreamingCallbackHttpResponse = 
+ record {
+   body: vec nat8;
+   token: opt StreamingCallbackToken;
+ };
+type HttpResponse = 
+ record {
+   body: vec nat8;
+   headers: vec HeaderField;
+   status_code: nat16;
+   streaming_strategy: opt StreamingStrategy;
+ };
+type HttpRequest = 
+ record {
+   body: vec nat8;
+   headers: vec HeaderField;
+   method: text;
+   url: text;
+ };
+type HttpDemo = 
+ service {
+   createFile: (FileInit, UserName__1) -> (opt FileId);
+   getFileChunk: (FileId, nat) -> (opt ChunkData) query;
+   getFiles: () -> (opt vec FileInfo2) query;
+   http_request: (HttpRequest) -> (HttpResponse) query;
+   http_request_streaming_callback: (StreamingCallbackToken) ->
+    (StreamingCallbackHttpResponse) query;
+   markFile: (FileId) -> (opt null);
+   putFileChunk: (FileId, nat, ChunkData) -> ();
+ };
+type HeaderField = 
+ record {
+   text;
+   text;
+ };
+type FileInit = 
+ record {
+   chunkCount: nat;
+   fileSize: nat;
+   mimeType: text;
+   name: text;
+ };
+type FileInfo2 = 
+ record {
+   chunkCount: nat;
+   createdAt: int;
+   fileId: FileId__1;
+   fileSize: nat;
+   mimeType: text;
+   name: text;
+   userName: UserName;
+ };
+type FileId__1 = text;
+type FileId = text;
+type ChunkData = blob;
+service : () -> HttpDemo
