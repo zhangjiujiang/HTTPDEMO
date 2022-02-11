@@ -27,7 +27,8 @@ export const idlFactory = ({ IDL }) => {
     'headers' : IDL.Vec(HeaderField),
   });
   const StreamingCallbackToken = IDL.Record({
-    'key' : IDL.Text,
+    'token' : IDL.Text,
+    'fullPath' : IDL.Text,
     'index' : IDL.Nat,
     'contentEncoding' : IDL.Text,
   });

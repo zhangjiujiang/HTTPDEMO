@@ -9,8 +9,9 @@ type StreamingStrategy = variant {
 type StreamingCallbackToken = 
  record {
    contentEncoding: text;
+   fullPath: text;
    index: nat;
-   key: text;
+   token: text;
  };
 type StreamingCallbackHttpResponse = 
  record {

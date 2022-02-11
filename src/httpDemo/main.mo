@@ -27,7 +27,8 @@ actor class HttpDemo() = this{
     var state = Types.empty();
     private func createFile_(fileData : FileInit, userName: UserName) : ?FileId {
         let now = Time.now();
-        let fileId = userName # "-" # fileData.name # "-" # (Int.toText(now));
+        let fileId = userName # "-" # fileData.name;
+        Debug.print("fileId::::"#fileId);
         switch (state.files2.get(fileId)) {
             case (?_) { /* error -- ID already taken. */ null };
             case null { /* ok, not taken yet. */
@@ -69,6 +70,7 @@ actor class HttpDemo() = this{
     public shared(msg) func markFile(fileId : FileId) : async ?() {
         do ? {
             // assert(msg.caller==owner);
+            Debug.print("fileId::::"#fileId);
             var fileInfo = state.files2.get(fileId)!;
             state.files2.put(fileId, {
                 userName = fileInfo.userName;
@@ -78,12 +80,6 @@ actor class HttpDemo() = this{
                 chunkCount = fileInfo.chunkCount ;
                 fileSize = fileInfo.fileSize;
                 mimeType = fileInfo.mimeType ;
-                // thumbnail = fileInfo.thumbnail;
-                // marked= not(fileInfo.marked) ;
-                // sharedWith = fileInfo.sharedWith ;
-                // madePublic = fileInfo.madePublic;
-                // fileHash = fileInfo.fileHash;
-                // folder = fileInfo.folder;
             });
         }
     };
@@ -117,10 +113,10 @@ actor class HttpDemo() = this{
         };
         b.toArray();
     };
-    
-    public shared query({caller}) func http_request(request : Http.HttpRequest) : async Http.HttpResponse {
-        Debug.print("url :" # request.url);
-        let fileId = request.url;
+    public shared query({caller}) func http_request({url: Text;} : Http.HttpRequest) : async Http.HttpResponse {
+        Debug.print("url :" # url);
+        let path = Iter.toArray<Text>(Text.tokens(url, #text("/")));
+        let fileId = path[0];
         switch(state.files2.get(fileId)){
             case(null) {
                 return {
@@ -132,6 +128,7 @@ actor class HttpDemo() = this{
             };
             case (?fileInfo){
                 if(fileInfo.fileSize == 1){
+                    Debug.print("http_request :::: 1");
                     return {
                         status_code =200;
                         headers = [("Content-Type",fileInfo.mimeType)];
@@ -139,6 +136,7 @@ actor class HttpDemo() = this{
                         streaming_strategy = null;
                     }
                 }else{
+                    Debug.print("http_request :::: 2");
                     return {
                         status_code =200;
                         headers = [("Content-Type",fileInfo.mimeType)];
@@ -149,13 +147,13 @@ actor class HttpDemo() = this{
             };
         }
     };
-
     public shared query({caller}) func http_request_streaming_callback(tk: Http.StreamingCallbackToken) : async Http.StreamingCallbackHttpResponse {
-        switch (state.files2.get(tk.key)) {
+        Debug.print("http_request_streaming_callback"# debug_show(tk.token,tk.index));
+        switch (state.files2.get(tk.token)) {
             case (? v)  {
                 return {
-                    body = Blob.toArray(unwrap<ChunkData>(state.chunks.get(chunkId(tk.key,tk.index))));
-                    token = createToken(tk.key, tk.index, getFileChunks(v));
+                    body = Blob.toArray(unwrap<ChunkData>(state.chunks.get(chunkId(tk.token,tk.index))));
+                    token = createToken(tk.token, tk.index, getFileChunks(v));
                 };
             };
             case (_) {
@@ -166,6 +164,7 @@ actor class HttpDemo() = this{
 
     private func createStrategy(key: Text, index: Nat, data: [Blob]) : ?Http.StreamingStrategy {
         let streamingToken: ?Http.StreamingCallbackToken = createToken(key, index, data);
+        Debug.print("createStrategy"# debug_show(streamingToken));
         switch (streamingToken) {
             case (null) { null };
             case (?streamingToken) {
@@ -186,13 +185,14 @@ actor class HttpDemo() = this{
     };
 
     private func createToken(key: Text, chunkIndex: Nat, data: [Blob]) : ?Http.StreamingCallbackToken {
+        Debug.print("createToken"# debug_show(key,chunkIndex));
         if (chunkIndex + 1 >= data.size()) {
             return null;
         };
 
         let streamingToken: ?Http.StreamingCallbackToken = ?{
-            // fullPath = key.fullPath;
-            key = key;
+            fullPath = key;
+            token = key;
             index = chunkIndex + 1;
             contentEncoding = "gzip";
         };

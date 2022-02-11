@@ -50,7 +50,8 @@ export interface StreamingCallbackHttpResponse {
   'body' : Array<number>,
 }
 export interface StreamingCallbackToken {
-  'key' : string,
+  'token' : string,
+  'fullPath' : string,
   'index' : bigint,
   'contentEncoding' : string,
 }
