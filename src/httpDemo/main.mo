@@ -148,12 +148,12 @@ actor class HttpDemo() = this{
         }
     };
     public shared query({caller}) func http_request_streaming_callback(tk: Http.StreamingCallbackToken) : async Http.StreamingCallbackHttpResponse {
-        Debug.print("http_request_streaming_callback"# debug_show(tk.token,tk.index));
-        switch (state.files2.get(tk.token)) {
+        Debug.print("http_request_streaming_callback"# debug_show(tk.key,tk.index));
+        switch (state.files2.get(tk.key)) {
             case (? v)  {
                 return {
-                    body = Blob.toArray(unwrap<ChunkData>(state.chunks.get(chunkId(tk.token,tk.index))));
-                    token = createToken(tk.token, tk.index, getFileChunks(v));
+                    body = Blob.toArray(unwrap<ChunkData>(state.chunks.get(chunkId(tk.key,tk.index))));
+                    token = createToken(tk.key, tk.index, getFileChunks(v));
                 };
             };
             case (_) {
@@ -164,7 +164,6 @@ actor class HttpDemo() = this{
 
     private func createStrategy(key: Text, index: Nat, data: [Blob]) : ?Http.StreamingStrategy {
         let streamingToken: ?Http.StreamingCallbackToken = createToken(key, index, data);
-        Debug.print("createStrategy"# debug_show(streamingToken));
         switch (streamingToken) {
             case (null) { null };
             case (?streamingToken) {
@@ -175,7 +174,7 @@ actor class HttpDemo() = this{
                 let canisterId: Text = Principal.toText(self);
 
                 let canister = actor (canisterId) : actor { http_request_streaming_callback : shared () -> async () };
-
+                Debug.print("createStrategy"# debug_show(streamingToken));
                 return ?#Callback({
                     token = streamingToken;
                     callback = canister.http_request_streaming_callback;
@@ -191,10 +190,10 @@ actor class HttpDemo() = this{
         };
 
         let streamingToken: ?Http.StreamingCallbackToken = ?{
-            fullPath = key;
-            token = key;
+            key = key;
             index = chunkIndex + 1;
-            contentEncoding = "gzip";
+            content_encoding = "gzip";
+            sha256 = null;
         };
 
         return streamingToken;

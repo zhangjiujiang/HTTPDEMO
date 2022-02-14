@@ -50,10 +50,10 @@ export interface StreamingCallbackHttpResponse {
   'body' : Array<number>,
 }
 export interface StreamingCallbackToken {
-  'token' : string,
-  'fullPath' : string,
+  'key' : string,
+  'sha256' : [] | [Array<number>],
   'index' : bigint,
-  'contentEncoding' : string,
+  'content_encoding' : string,
 }
 export type StreamingStrategy = {
     'Callback' : {
