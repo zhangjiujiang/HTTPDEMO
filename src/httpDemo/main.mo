@@ -94,12 +94,19 @@ actor class HttpDemo() = this{
         {
         // assert(msg.caller==owner);
         Debug.print("chunkNum::::"#Nat.toText(chunkNum));
+        Debug.print("chunkDataSize::"#debug_show(Blob.hash(chunkData)));
         state.chunks.put(chunkId(fileId, chunkNum), chunkData);
     };
 
     // Get File Chunk
     public query(msg) func getFileChunk(fileId : FileId, chunkNum : Nat) : async ?ChunkData {
-        // assert(msg.caller==owner);
+        _getFileChunk(fileId, chunkNum);
+    };
+
+     private func _getFileChunk(fileId : FileId, chunkNum : Nat) : ?ChunkData {
+        let chunkData : ?ChunkData = state.chunks.get(chunkId(fileId,chunkNum));
+        Debug.print("getFileChunk::::"#Nat.toText(chunkNum));
+        Debug.print("chunkDataSize::"#debug_show(Blob.hash(unwrap(chunkData))));
         state.chunks.get(chunkId(fileId, chunkNum));
     };
 
@@ -127,33 +134,23 @@ actor class HttpDemo() = this{
                 };
             };
             case (?fileInfo){
-                if(fileInfo.fileSize == 1){
-                    Debug.print("http_request :::: 1");
-                    return {
-                        status_code =200;
-                        headers = [("Content-Type",fileInfo.mimeType)];
-                        body = Blob.toArray(unwrap<ChunkData>(state.chunks.get(chunkId(fileId, 1))));
-                        streaming_strategy = null;
-                    }
-                }else{
-                    Debug.print("http_request :::: 2");
-                    return {
-                        status_code =200;
-                        headers = [("Content-Type",fileInfo.mimeType)];
-                        body = Blob.toArray(unwrap<ChunkData>(state.chunks.get(chunkId(fileId, 1))));
-                        streaming_strategy = createStrategy(fileInfo.fileId,0,getFileChunks(fileInfo));
-                    }
-                };
+                return {
+                    status_code =200;
+                    headers = [("Content-Type",fileInfo.mimeType)];
+                    body = Blob.toArray(unwrap<ChunkData>(_getFileChunk(fileId, 1)));
+                    streaming_strategy = createStrategy(fileInfo.fileId,1,fileInfo.chunkCount);
+                }
             };
         }
     };
+
     public shared query({caller}) func http_request_streaming_callback(tk: Http.StreamingCallbackToken) : async Http.StreamingCallbackHttpResponse {
         Debug.print("http_request_streaming_callback"# debug_show(tk.key,tk.index));
         switch (state.files2.get(tk.key)) {
             case (? v)  {
                 return {
-                    body = Blob.toArray(unwrap<ChunkData>(state.chunks.get(chunkId(tk.key,tk.index))));
-                    token = createToken(tk.key, tk.index, getFileChunks(v));
+                    body = Blob.toArray(unwrap<ChunkData>(_getFileChunk(tk.key,tk.index)));
+                    token = createToken(tk.key, tk.index, v.chunkCount);
                 };
             };
             case (_) {
@@ -162,30 +159,34 @@ actor class HttpDemo() = this{
         };
     };
 
-    private func createStrategy(key: Text, index: Nat, data: [Blob]) : ?Http.StreamingStrategy {
-        let streamingToken: ?Http.StreamingCallbackToken = createToken(key, index, data);
-        switch (streamingToken) {
-            case (null) { null };
-            case (?streamingToken) {
-                // Hack: https://forum.dfinity.org/t/cryptic-error-from-icx-proxy/6944/8
-                // Issue: https://github.com/dfinity/candid/issues/273
+    private func createStrategy(key: Text, index: Nat, chunkCount : Nat) : ?Http.StreamingStrategy {
+        if(chunkCount == 1){
+            return null;
+        }else{
+            let streamingToken: ?Http.StreamingCallbackToken = createToken(key, index, chunkCount);
+            switch (streamingToken) {
+                case (null) { null };
+                case (?streamingToken) {
+                    // Hack: https://forum.dfinity.org/t/cryptic-error-from-icx-proxy/6944/8
+                    // Issue: https://github.com/dfinity/candid/issues/273
 
-                let self: Principal = Principal.fromActor(this);
-                let canisterId: Text = Principal.toText(self);
+                    let self: Principal = Principal.fromActor(this);
+                    let canisterId: Text = Principal.toText(self);
 
-                let canister = actor (canisterId) : actor { http_request_streaming_callback : shared () -> async () };
-                Debug.print("createStrategy"# debug_show(streamingToken));
-                return ?#Callback({
-                    token = streamingToken;
-                    callback = canister.http_request_streaming_callback;
-                });
+                    let canister = actor (canisterId) : actor { http_request_streaming_callback : shared () -> async () };
+                    Debug.print("createStrategy"# debug_show(streamingToken));
+                    return ?#Callback({
+                        token = streamingToken;
+                        callback = canister.http_request_streaming_callback;
+                    });
+                };
             };
-        };
+        }
     };
 
-    private func createToken(key: Text, chunkIndex: Nat, data: [Blob]) : ?Http.StreamingCallbackToken {
+    private func createToken(key: Text, chunkIndex: Nat, chunkCount:Nat) : ?Http.StreamingCallbackToken {
         Debug.print("createToken"# debug_show(key,chunkIndex));
-        if (chunkIndex + 1 >= data.size()) {
+        if (chunkIndex + 1 > chunkCount) {
             return null;
         };
 
