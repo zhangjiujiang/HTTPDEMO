@@ -1,7 +1,11 @@
 {
   "canisters": {
+    "proxy": {
+      "main": "src/httpDemo/proxy.mo",
+      "type": "motoko"
+    },
     "httpDemo": {
-      "main": "src/httpDemo/main.mo",
+      "main": "src/httpDemo/bucket.mo",
       "type": "motoko"
     },
     "httpDemo_assets": {

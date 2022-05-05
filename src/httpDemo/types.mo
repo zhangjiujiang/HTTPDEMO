@@ -20,7 +20,7 @@ module {
 
     public type FileInfo = {
         fileId : FileId;
-        userName: UserName;
+        userId: UserId;
         createdAt : Int;
         name: Text;
         chunkCount: Nat;
@@ -34,7 +34,7 @@ module {
 
     public type FileInfo2 = {
         fileId : FileId;
-        userName: UserName;
+        userId: UserId;
         createdAt : Int;
         name: Text;
         chunkCount: Nat;

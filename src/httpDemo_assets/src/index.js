@@ -17,10 +17,6 @@ async function getFileInit(file) {
       fileSize: file.size,
       name: file.name,
       mimeType: file.type,
-      // marked: false,
-      // sharedWith: [],
-      // thumbnail: await resizeFile(file),
-      // folder,
     };
   }
   return {
@@ -28,10 +24,6 @@ async function getFileInit(file) {
     fileSize: file.size,
     name: file.name,
     mimeType: file.type,
-    // marked: false,
-    // sharedWith: [],
-    // thumbnail: '',
-    // folder,
   };
 };
 
@@ -43,7 +35,7 @@ document.getElementById('upload-file').addEventListener('change', async (evt) =>
   const file_list = evt.target.files
   const file = file_list[0];
   const fileInit = await getFileInit(file);
-  const [fileId] = await httpDemo.createFile(fileInit, "anywn");
+  const [fileId] = await httpDemo.createFile(fileInit, "anywn");//TODO anywn改为调用者的principal
   console.log("fileId::::" + fileId);
   let chunk = 1;
 
@@ -55,7 +47,7 @@ document.getElementById('upload-file').addEventListener('change', async (evt) =>
     const fileSlice = file.slice(byteStart, Math.min(file.size, byteStart + MAX_CHUNK_SIZE), file.type);
     const fileSliceBuffer = (await fileSlice.arrayBuffer()) || new ArrayBuffer(0);
     const sliceToNat = encodeArrayBuffer(fileSliceBuffer);
-    await httpDemo.putFileChunk(fileId, chunk, sliceToNat);
+    await httpDemo.putFileChunk(fileId, chunk, sliceToNat, "anywn");//TODO anywn改为调用者的principal
   }
   console.log("upload file successed");
 });

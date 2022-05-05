@@ -1,0 +1,5 @@
+type Proxy = 
+ service {
+   getBucket: () -> (principal);
+ };
+service : (principal) -> Proxy

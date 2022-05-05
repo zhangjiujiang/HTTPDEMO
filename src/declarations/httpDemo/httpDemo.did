@@ -1,5 +1,5 @@
-type UserName__1 = text;
-type UserName = text;
+type UserId__1 = principal;
+type UserId = principal;
 type StreamingStrategy = variant {
                            Callback:
                             record {
@@ -32,17 +32,6 @@ type HttpRequest =
    method: text;
    url: text;
  };
-type HttpDemo = 
- service {
-   createFile: (FileInit, UserName__1) -> (opt FileId);
-   getFileChunk: (FileId, nat) -> (opt ChunkData) query;
-   getFiles: () -> (opt vec FileInfo2) query;
-   http_request: (HttpRequest) -> (HttpResponse) query;
-   http_request_streaming_callback: (StreamingCallbackToken) ->
-    (StreamingCallbackHttpResponse) query;
-   markFile: (FileId) -> (opt null);
-   putFileChunk: (FileId, nat, ChunkData) -> ();
- };
 type HeaderField = 
  record {
    text;
@@ -63,9 +52,20 @@ type FileInfo2 =
    fileSize: nat;
    mimeType: text;
    name: text;
-   userName: UserName;
+   userId: UserId__1;
  };
 type FileId__1 = text;
 type FileId = text;
 type ChunkData = blob;
-service : () -> HttpDemo
+type BucketActor = 
+ service {
+   createFile: (FileInit, UserId) -> (opt FileId);
+   getFileChunk: (FileId, nat) -> (opt ChunkData) query;
+   getFiles: () -> (opt vec FileInfo2) query;
+   getMemory: () -> (nat) query;
+   http_request: (HttpRequest) -> (HttpResponse) query;
+   http_request_streaming_callback: (StreamingCallbackToken) ->
+    (StreamingCallbackHttpResponse) query;
+   putFileChunk: (FileId, nat, ChunkData, UserId) -> ();
+ };
+service : () -> BucketActor

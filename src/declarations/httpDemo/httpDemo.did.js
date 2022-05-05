@@ -5,13 +5,13 @@ export const idlFactory = ({ IDL }) => {
     'fileSize' : IDL.Nat,
     'chunkCount' : IDL.Nat,
   });
-  const UserName__1 = IDL.Text;
+  const UserId = IDL.Principal;
   const FileId = IDL.Text;
   const ChunkData = IDL.Vec(IDL.Nat8);
-  const UserName = IDL.Text;
+  const UserId__1 = IDL.Principal;
   const FileId__1 = IDL.Text;
   const FileInfo2 = IDL.Record({
-    'userName' : UserName,
+    'userId' : UserId__1,
     'name' : IDL.Text,
     'createdAt' : IDL.Int,
     'mimeType' : IDL.Text,
@@ -48,23 +48,23 @@ export const idlFactory = ({ IDL }) => {
     'token' : IDL.Opt(StreamingCallbackToken),
     'body' : IDL.Vec(IDL.Nat8),
   });
-  const HttpDemo = IDL.Service({
-    'createFile' : IDL.Func([FileInit, UserName__1], [IDL.Opt(FileId)], []),
+  const BucketActor = IDL.Service({
+    'createFile' : IDL.Func([FileInit, UserId], [IDL.Opt(FileId)], []),
     'getFileChunk' : IDL.Func(
         [FileId, IDL.Nat],
         [IDL.Opt(ChunkData)],
         ['query'],
       ),
     'getFiles' : IDL.Func([], [IDL.Opt(IDL.Vec(FileInfo2))], ['query']),
+    'getMemory' : IDL.Func([], [IDL.Nat], ['query']),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'http_request_streaming_callback' : IDL.Func(
         [StreamingCallbackToken],
         [StreamingCallbackHttpResponse],
         ['query'],
       ),
-    'markFile' : IDL.Func([FileId], [IDL.Opt(IDL.Null)], []),
-    'putFileChunk' : IDL.Func([FileId, IDL.Nat, ChunkData], [], []),
+    'putFileChunk' : IDL.Func([FileId, IDL.Nat, ChunkData, UserId], [], []),
   });
-  return HttpDemo;
+  return BucketActor;
 };
 export const init = ({ IDL }) => { return []; };

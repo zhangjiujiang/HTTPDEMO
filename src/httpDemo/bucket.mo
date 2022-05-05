@@ -12,29 +12,28 @@ import P "mo:base/Prelude";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
-
+import Cycles "mo:base/ExperimentalCycles";
+import Prim "mo:⛔";
 import Http "http";
 import Types "types";
-actor class HttpDemo() = this{
-    //File start
-    // Create file
+actor class BucketActor() = this{
     type FileId = Types.FileId;
     type FileInit = Types.FileInit;
-    type UserName = Types.UserName;
+    type UserId = Types.UserId;
     type FileInfo2 = Types.FileInfo2;
     type ChunkData = Types.ChunkData;
     type ChunkId = Types.ChunkId;
     var state = Types.empty();
-    private func createFile_(fileData : FileInit, userName: UserName) : ?FileId {
+    private func createFile_(fileData : FileInit, userId: UserId) : ?FileId {
         let now = Time.now();
-        let fileId = userName # "-" # fileData.name;
+        let fileId : Text = Principal.toText(userId) # "-" # fileData.name;
         Debug.print("fileId::::"#fileId);
         switch (state.files2.get(fileId)) {
             case (?_) { /* error -- ID already taken. */ null };
             case null { /* ok, not taken yet. */
                 state.files2.put(fileId, {
                     fileId = fileId;
-                    userName = userName;
+                    userId = userId;
                     name = fileData.name;
                     createdAt = now;
                     chunkCount = fileData.chunkCount;
@@ -46,10 +45,10 @@ actor class HttpDemo() = this{
         };
     };
 
-    public shared(msg) func createFile(i : FileInit, userName: UserName) : async ?FileId {
+    public shared(msg) func createFile(i : FileInit, userId: UserId) : async ?FileId {
         do?{
-            // assert(msg.caller==owner);
-            let fileId = createFile_(i, userName);
+            assert(msg.caller== userId);
+            let fileId = createFile_(i, userId);
             fileId!
         }
     };
@@ -66,33 +65,15 @@ actor class HttpDemo() = this{
         }
     };
 
-    // Mark File
-    public shared(msg) func markFile(fileId : FileId) : async ?() {
-        do ? {
-            // assert(msg.caller==owner);
-            Debug.print("fileId::::"#fileId);
-            var fileInfo = state.files2.get(fileId)!;
-            state.files2.put(fileId, {
-                userName = fileInfo.userName;
-                createdAt = fileInfo.createdAt ;
-                fileId = fileId ;
-                name = fileInfo.name ;
-                chunkCount = fileInfo.chunkCount ;
-                fileSize = fileInfo.fileSize;
-                mimeType = fileInfo.mimeType ;
-            });
-        }
-    };
-
     func chunkId(fileId : FileId, chunkNum : Nat) : ChunkId {
         fileId # (Nat.toText(chunkNum));
     };
 
     // Put File Chunk
     public shared(msg) func putFileChunk
-        (fileId : FileId, chunkNum : Nat, chunkData : ChunkData) : async ()
+        (fileId : FileId, chunkNum : Nat, chunkData : ChunkData,userId : UserId) : async ()
         {
-        // assert(msg.caller==owner);
+        assert(msg.caller== userId);
         Debug.print("chunkNum::::"#Nat.toText(chunkNum));
         Debug.print("chunkDataSize::"#debug_show(Blob.hash(chunkData)));
         state.chunks.put(chunkId(fileId, chunkNum), chunkData);
@@ -222,5 +203,9 @@ actor class HttpDemo() = this{
         for ((fileId, fileInfo) in fileArray.vals()) {
             state.files2.put(fileId, fileInfo);
         };
+    };
+
+    public query func getMemory() : async Nat{
+        Prim.rts_memory_size();
     };
 };

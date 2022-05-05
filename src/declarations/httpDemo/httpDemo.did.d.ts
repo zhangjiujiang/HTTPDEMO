@@ -1,9 +1,25 @@
 import type { Principal } from '@dfinity/principal';
+export interface BucketActor {
+  'createFile' : (arg_0: FileInit, arg_1: UserId) => Promise<[] | [FileId]>,
+  'getFileChunk' : (arg_0: FileId, arg_1: bigint) => Promise<[] | [ChunkData]>,
+  'getFiles' : () => Promise<[] | [Array<FileInfo2>]>,
+  'getMemory' : () => Promise<bigint>,
+  'http_request' : (arg_0: HttpRequest) => Promise<HttpResponse>,
+  'http_request_streaming_callback' : (
+      arg_0: StreamingCallbackToken,
+    ) => Promise<StreamingCallbackHttpResponse>,
+  'putFileChunk' : (
+      arg_0: FileId,
+      arg_1: bigint,
+      arg_2: ChunkData,
+      arg_3: UserId,
+    ) => Promise<undefined>,
+}
 export type ChunkData = Array<number>;
 export type FileId = string;
 export type FileId__1 = string;
 export interface FileInfo2 {
-  'userName' : UserName,
+  'userId' : UserId__1,
   'name' : string,
   'createdAt' : bigint,
   'mimeType' : string,
@@ -18,21 +34,6 @@ export interface FileInit {
   'chunkCount' : bigint,
 }
 export type HeaderField = [string, string];
-export interface HttpDemo {
-  'createFile' : (arg_0: FileInit, arg_1: UserName__1) => Promise<
-      [] | [FileId]
-    >,
-  'getFileChunk' : (arg_0: FileId, arg_1: bigint) => Promise<[] | [ChunkData]>,
-  'getFiles' : () => Promise<[] | [Array<FileInfo2>]>,
-  'http_request' : (arg_0: HttpRequest) => Promise<HttpResponse>,
-  'http_request_streaming_callback' : (
-      arg_0: StreamingCallbackToken,
-    ) => Promise<StreamingCallbackHttpResponse>,
-  'markFile' : (arg_0: FileId) => Promise<[] | [null]>,
-  'putFileChunk' : (arg_0: FileId, arg_1: bigint, arg_2: ChunkData) => Promise<
-      undefined
-    >,
-}
 export interface HttpRequest {
   'url' : string,
   'method' : string,
@@ -61,6 +62,6 @@ export type StreamingStrategy = {
       'callback' : [Principal, string],
     }
   };
-export type UserName = string;
-export type UserName__1 = string;
-export interface _SERVICE extends HttpDemo {}
+export type UserId = Principal;
+export type UserId__1 = Principal;
+export interface _SERVICE extends BucketActor {}
