@@ -1,10 +1,10 @@
 {
   "canisters": {
-    "proxy": {
+    "mgmt": {
       "main": "src/httpDemo/proxy.mo",
       "type": "motoko"
     },
-    "httpDemo": {
+    "bucket": {
       "main": "src/httpDemo/bucket.mo",
       "type": "motoko"
     },
